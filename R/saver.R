@@ -194,5 +194,3 @@ saver <- function(x, fit.cells = NULL, pred.cells = NULL, do.fast = TRUE, ncores
     out$estimate
   }
 }
-
-
