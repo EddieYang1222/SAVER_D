@@ -3,5 +3,5 @@
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("EddieYang1222/INClock")
+devtools::install_github("EddieYang1222/SAVER_D")
 ```
