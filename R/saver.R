@@ -154,7 +154,7 @@ saver <- function(x, fit.cells = NULL, pred.cells = NULL, do.fast = TRUE, ncores
 
   # if prior means are provided
   if (!is.null(mu)) {
-    out <- saver.fit.mean(x, ncores, sf, scale.sf, mu, ngenes = nrow(fit.x),
+    out <- saver.fit.mean(fit.x, pred.x, ncores, sf, scale.sf, mu, ngenes = nrow(fit.x),
                           ncells = ncol(pred.x), gene.names, cell.names,
                           estimates.only)
   } else if (null.model) {

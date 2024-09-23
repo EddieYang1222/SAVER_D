@@ -596,9 +596,6 @@ saver.fit.mean <- function(fit.x, pred.x, ncores, sf, scale.sf, mu, ngenes = nro
                            ncells = ncol(pred.x), gene.names = rownames(fit.x),
                            cell.names = colnames(pred.x), estimates.only) {
   
-  fit.mu <- mu[, colnames(fit.x), drop = FALSE]
-  pred.mu <- mu[, colnames(pred.x), drop = FALSE]
-  
   out <- list()
   out$estimate <- matrix(0, ngenes, ncells, dimnames = list(gene.names, cell.names))
   if (!estimates.only) {
