@@ -185,15 +185,17 @@ calc.estimate <- function(x, x.est, cutoff = 0, coefs = NULL, sf, scale.sf,
 #' @rdname calc_estimate
 #' @import foreach
 #' @export
-calc.estimate.mean <- function(x, sf, scale.sf, mu, nworkers, estimates.only) {
-  cs <- min(ceiling(nrow(x)/nworkers), get.chunk(nrow(x), nworkers))
-  iterx <- iterators::iter(as.matrix(x), by = "row", chunksize = cs)
-  itermu <- iterators::iter(mu, by = "row", chunksize = cs)
+calc.estimate.mean <- function(pred.x, fit.x, sf, scale.sf, pred.mu, nworkers, estimates.only) {
+  
+  cs <- min(ceiling(nrow(pred.x)/nworkers), get.chunk(nrow(pred.x), nworkers))
+  iterx <- iterators::iter(as.matrix(pred.x), by = "row", chunksize = cs)
+  itermu <- iterators::iter(pred.mu, by = "row", chunksize = cs)
   itercount <- iterators::icount(ceiling(iterx$length/iterx$chunksize))
   ix <- NULL; ind <- NULL; imu <- NULL
   out <- suppressWarnings(
     foreach::foreach(ix = iterx, imu = itermu, ind = itercount,
                      .packages = "SAVER", .errorhandling="pass") %dopar% {
+      
       y <- sweep(ix, 2, sf, "/")
       maxcor <- rep(0, nrow(y))
       gene.means <- rowMeans(y)

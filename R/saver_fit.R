@@ -592,9 +592,13 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
 
 #' @rdname saver_fit
 #' @export
-saver.fit.mean <- function(x, ncores, sf, scale.sf, mu, ngenes = nrow(x),
-                           ncells = ncol(x), gene.names = rownames(x),
-                           cell.names = colnames(x), estimates.only) {
+saver.fit.mean <- function(fit.x, pred.x, ncores, sf, scale.sf, mu, ngenes = nrow(fit.x),
+                           ncells = ncol(pred.x), gene.names = rownames(fit.x),
+                           cell.names = colnames(pred.x), estimates.only) {
+  
+  fit.mu <- mu[, colnames(fit.x), drop = FALSE]
+  pred.mu <- mu[, colnames(pred.x), drop = FALSE]
+  
   out <- list()
   out$estimate <- matrix(0, ngenes, ncells, dimnames = list(gene.names, cell.names))
   if (!estimates.only) {
@@ -628,8 +632,8 @@ saver.fit.mean <- function(x, ncores, sf, scale.sf, mu, ngenes = nrow(x),
   ind1 <- ind[1:n1]
   message("Estimating finish time...")
   t1 <- Sys.time()
-  results <- calc.estimate.mean(x[ind1, , drop = FALSE], sf, scale.sf,
-                            mu[ind1, , drop = FALSE], nworkers, estimates.only)
+  results <- calc.estimate.mean(pred.x[ind1, , drop = FALSE], sf, scale.sf,
+                                pred.mu[ind1, , drop = FALSE], nworkers, estimates.only)
   out$estimate[ind1, ] <- results$est
   if (!estimates.only) {
     out$se[ind1, ] <- results$se
@@ -666,7 +670,7 @@ saver.fit.mean <- function(x, ncores, sf, scale.sf, mu, ngenes = nrow(x),
   t1 <- Sys.time()
   for (i in 1:(length(split.ind)-1)) {
     out <- update.output(calc.estimate.mean, ind, split.ind[i]+1,
-                         split.ind[i+1], out, x, sf, scale.sf, mu,
+                         split.ind[i+1], out, pred.x, sf, scale.sf, pred.mu,
                          nworkers, estimates.only)
     t2 <- Sys.time()
     d1 <- difftime(t2, t1, units = "secs")/(split.ind[i+1]-n1)
