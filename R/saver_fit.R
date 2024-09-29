@@ -120,7 +120,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
     for (j in 1:6) {
       info[[j+1]][ind1] <- out[[j+2]]
     }
-
+    
     n2 <- min(max(100, nworkers), npred)
     t2 <- Sys.time()
     d1 <- mean(info$pred.time[ind[1:n1]] + info$var.time[ind[1:n1]])/nworkers
@@ -132,7 +132,9 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
     tdiff <- as.difftime(tdiff, units = "secs")
     message("Finished ", n1, "/", ngenes, " genes. Approximate finish time: ",
             Sys.time() + tdiff)
-
+    
+    # Store the CV models
+    cv.models <- out$cv.models
 
     if (n1 == npred) {
       if (n1 != ngenes) {
@@ -160,7 +162,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
       }
       info[[10]] <- Sys.time() - st
       return(list(estimate = est, se = se, a = a, b = b, k = k,
-                  a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info))
+                  a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info, cv.models = cv.models))
     }
 
     ind2 <- ind[(n1+1):n2]
@@ -228,7 +230,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
       }
       info[[10]] <- Sys.time() - st
       return(list(estimate = est, se = se, a = a, b = b, k = k,
-                  a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info))
+                  a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info, cv.models = cv.models))
     }
 
     message("Calculating lambda coefficients...")
@@ -288,7 +290,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
       }
       info[[10]] <- Sys.time() - st
       return(list(estimate = est, se = se, a = a, b = b, k = k,
-                  a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info))
+                  a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info, cv.models = cv.models))
     }
 
     pred <- which(info$maxcor > cutoff)
@@ -355,7 +357,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
       }
       info[[10]] <- Sys.time() - st
       return(list(estimate = est, se = se, a = a, b = b, k = k,
-                  a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info))
+                  a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info, cv.models = cv.models))
     }
 
     n5 <- npred
@@ -412,7 +414,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
     }
     info[[10]] <- Sys.time() - st
     return(list(estimate = est, se = se, a = a, b = b, k = k,
-                a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info))
+                a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info, cv.models = cv.models))
   } else {
     n1 <- min(max(8, nworkers), npred)
     ind1 <- ind[1:n1]
@@ -471,7 +473,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
       }
       info[[10]] <- Sys.time() - st
       return(list(estimate = est, se = se, a = a, b = b, k = k,
-                  a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info))
+                  a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info, cv.models = cv.models))
     }
 
     n2 <- min(ceiling((npred-n1)/4) + n1, npred)
@@ -529,7 +531,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
       }
       info[[10]] <- Sys.time() - st
       return(list(estimate = est, se = se, a = a, b = b, k = k,
-                  a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info))
+                  a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info, cv.models = cv.models))
     }
 
     n3 <- npred
@@ -586,7 +588,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
     }
     info[[10]] <- Sys.time() - st
     return(list(estimate = est, se = se, a = a, b = b, k = k,
-                a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info))
+                a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info, cv.models = cv.models))
   }
 }
 

@@ -81,6 +81,6 @@ expr.predict <- function(x, y, pred.cells = 1:length(y), seed = NULL,
     }
   }
 
-  return(list(mu, lambda.max, lambda.min, sd.cv))
+  return(list(mu, lambda.max, lambda.min, sd.cv, cv))
 }
 
