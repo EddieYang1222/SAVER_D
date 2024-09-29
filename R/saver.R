@@ -95,43 +95,28 @@
 #' @import foreach methods
 #'
 #' @export
-saver <- function(x, fit.cells = NULL, pred.cells = NULL, do.fast = TRUE, ncores = 1, size.factor = NULL,
-                  npred = NULL, pred.genes = NULL, pred.genes.only = FALSE, null.model = FALSE, mu = NULL,
+saver <- function(x, do.fast = TRUE, ncores = 1, size.factor = NULL,
+                  npred = NULL, pred.cells = NULL, pred.genes = NULL,
+                  pred.genes.only = FALSE, null.model = FALSE, mu = NULL,
                   estimates.only = FALSE) {
-  
-  # Check the dimensions of 
-  x <- clean.data(x)
-  if (is.null(fit.cells)) fit.cells <- colnames(x)
-  if (is.null(pred.cells)) pred.cells <- colnames(x)
-  
   if (!is.null(mu)) {
-    if (length(fit.cells) == length(pred.cells)) {
-      mu <- check.mu(x, mu)
-    } else {
-      if (nrow(x) != nrow(mu)) {
-        stop("Number of genes (rows) in x and mu must match.")
-      }
-    }
+    mu <- check.mu(x, mu)
   }
-  
-  
-  fit.x <- x[, fit.cells, drop = FALSE]
-  pred.x <- x[, pred.cells, drop = FALSE]
-  
-  np <- dim(pred.x)
-  ngenes <- as.integer(nrow(fit.x))
+  x <- clean.data(x)
+  np <- dim(x)
+  ngenes <- as.integer(np[1])
   ncells <- as.integer(np[2])
-
+  
   message(ngenes, " genes, ", ncells, " cells")
-
+  
   # assign size factor
-  sf.out <- calc.size.factor(x, size.factor, ncells = ncol(pred.x))
+  sf.out <- calc.size.factor(x, size.factor, ncells)
   sf <- sf.out[[1]]
   scale.sf <- sf.out[[2]]
-
-  gene.names <- rownames(fit.x)
-  cell.names <- colnames(pred.x)
-
+  
+  gene.names <- rownames(x)
+  cell.names <- colnames(x)
+  
   # Set up parallel backend
   cl.create <- FALSE
   if (foreach::getDoParWorkers() > 1) {
@@ -151,37 +136,35 @@ saver <- function(x, fit.cells = NULL, pred.cells = NULL, do.fast = TRUE, ncores
       })
     }
   }
-
+  
   # if prior means are provided
   if (!is.null(mu)) {
-    out <- saver.fit.mean(fit.x, pred.x, ncores, sf, scale.sf, mu, ngenes = nrow(fit.x),
-                          ncells = ncol(pred.x), gene.names, cell.names,
+    out <- saver.fit.mean(x, ncores, sf, scale.sf, mu, ngenes = nrow(x),
+                          ncells = ncol(x), gene.names, cell.names,
                           estimates.only)
   } else if (null.model) {
-    out <- saver.fit.null(x, ncores, sf, scale.sf, ngenes = nrow(fit.x),
-                          ncells = ncol(pred.x), gene.names, cell.names,
+    out <- saver.fit.null(x, ncores, sf, scale.sf, ngenes = nrow(x),
+                          ncells = ncol(x), gene.names, cell.names,
                           estimates.only)
   } else {
     # assign pred.cells and pred.genes
-    pred.cells <- get.pred.cells(pred.cells, ncells = ncol(pred.x))
-    pred.genes <- get.pred.genes(pred.x, pred.genes, npred, ngenes = nrow(pred.x))
+    pred.cells <- get.pred.cells(pred.cells, ncells)
+    pred.genes <- get.pred.genes(x, pred.genes, npred, ngenes)
     npred <- length(pred.genes)
-
-
-    good.genes <- which(Matrix::rowMeans(x) >= 0.1)
-    gene.names <- rownames(pred.x)[good.genes]
     
+    
+    good.genes <- which(Matrix::rowMeans(x) >= 0.1)
     x.est <- t(as.matrix(log(sweep(x[good.genes, ] + 1, 2, sf, "/"))))
     if (pred.genes.only) {
-      x <- pred.x[pred.genes, , drop = FALSE]
+      x <- x[pred.genes, , drop = FALSE]
       pred.genes <- 1:nrow(x)
-      gene.names <- rownames(pred.x)
-      cell.names <- colnames(pred.x)
+      gene.names <- rownames(x)
+      cell.names <- colnames(x)
     }
-
-    out <- saver.fit(fit.x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
-                     pred.cells, null.model, ngenes = nrow(pred.x),
-                     ncells = ncol(pred.x), gene.names = rownames(pred.x), cell.names = colnames(pred.x),
+    
+    out <- saver.fit(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
+                     pred.cells, null.model, ngenes = nrow(x),
+                     ncells = ncol(x), gene.names, cell.names,
                      estimates.only)
   }
   message("Done!")
@@ -194,3 +177,5 @@ saver <- function(x, fit.cells = NULL, pred.cells = NULL, do.fast = TRUE, ncores
     out$estimate
   }
 }
+
+
