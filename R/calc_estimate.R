@@ -65,6 +65,7 @@
 calc.estimate <- function(x, x.est, cutoff = 0, coefs = NULL, sf, scale.sf,
                           pred.gene.names, pred.cells, null.model, nworkers,
                           calc.maxcor, estimates.only) {
+  
   cs <- min(ceiling(nrow(x)/nworkers), get.chunk(nrow(x), nworkers))
   iterx <- iterators::iter(as.matrix(x), by = "row", chunksize = cs)
   itercount <- iterators::icount(ceiling(iterx$length/iterx$chunksize))
@@ -87,6 +88,10 @@ calc.estimate <- function(x, x.est, cutoff = 0, coefs = NULL, sf, scale.sf,
       } else {
         se <- NA
       }
+      
+      # GLM parameters
+      gamma <- matrix(0, nrow(ix), ncol(x.est))
+      
       ct <- rep(0, nrow(ix))
       vt <- rep(0, nrow(ix))
       lambda.max <- rep(0, nrow(ix))
@@ -98,8 +103,6 @@ calc.estimate <- function(x, x.est, cutoff = 0, coefs = NULL, sf, scale.sf,
       a.nll <- rep(0, nrow(ix))
       b.nll <- rep(0, nrow(ix))
       k.nll <- rep(0, nrow(ix))
-      # Store the CV models
-      cv.models <- vector("list", nrow(ix))
       mu.out <- matrix(0, nrow(ix), ncol(ix))
 
       pred.gene <- (maxcor > cutoff) & (x.names %in% pred.gene.names)
@@ -107,7 +110,7 @@ calc.estimate <- function(x, x.est, cutoff = 0, coefs = NULL, sf, scale.sf,
         j <- (ind - 1)*cs + i
         ptc <- Sys.time()
         if (null.model | !pred.gene[i]) {
-          pred.out <- list(mean(y[i, pred.cells]), 0, 0, 0)
+          pred.out <- list(mean(y[i, pred.cells]), 0, 0, 0, rep(0, ncol(x.est)))
         } else {
           sameind <- which(x.est.names == x.names[i])
           if (is.null(coefs)) {
@@ -139,8 +142,7 @@ calc.estimate <- function(x, x.est, cutoff = 0, coefs = NULL, sf, scale.sf,
         }
         ct[i] <- as.numeric(Sys.time()-ptc)
         sd.cv[i] <- pred.out[[4]]
-        # Append the CV models
-        cv.models[i] <- pred.out[[5]]
+        gamma[i, ] <- pred.out[[5]]
         ptc <- Sys.time()
         post <- calc.post(ix[i, ], pred.out[[1]], sf, scale.sf)
         vt[i] <- as.numeric(Sys.time()-ptc)
@@ -156,10 +158,10 @@ calc.estimate <- function(x, x.est, cutoff = 0, coefs = NULL, sf, scale.sf,
           mu.out[i, ] <- post[[9]]
         }
       }
-      list(est, se, maxcor, lambda.max, lambda.min, sd.cv, ct, vt, a, b, k, a.nll, b.nll, k.nll, mu.out, cv.models)
+      list(est, se, maxcor, lambda.max, lambda.min, sd.cv, ct, vt, a, b, k, a.nll, b.nll, k.nll, mu.out, gamma)
     }
   )
-  if (length(out[[1]]) != 15) {
+  if (length(out[[1]]) != 16) {
     stop(out[[1]])
   }
   est <- do.call(rbind, lapply(out, `[[`, 1))
@@ -181,10 +183,12 @@ calc.estimate <- function(x, x.est, cutoff = 0, coefs = NULL, sf, scale.sf,
   a.nll <- unlist(lapply(out, `[[`, 12))
   b.nll <- unlist(lapply(out, `[[`, 13))
   k.nll <- unlist(lapply(out, `[[`, 14))
-  cv.models <- do.call(c, lapply(out, `[[`, 16))
+  
+  gamma <- do.call(rbind, lapply(out, `[[`, 16))
+  
   list(est = est, se = se, maxcor = maxcor, lambda.max = lambda.max,
        lambda.min = lambda.min, sd.cv = sd.cv, ct = ct, vt = vt, a = a, b = b, k = k,
-       a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, cv.models = cv.models)
+       a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, gamma = gamma)
 }
 
 #' @rdname calc_estimate
