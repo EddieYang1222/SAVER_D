@@ -65,7 +65,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
     se <- NA
   }
   
-  gamma <- matrix(0, ngenes, ngenes, dimnames = list(gene.names, gene.names))
+  glm.param <- vector("list", ngenes)
   
   info <- c(list(0), rep(list(rep(0, ngenes)), 6), list(0), list(0), list(0))
   a <- rep(0, ngenes)
@@ -112,7 +112,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
                          pred.cells, null.model, nworkers, calc.maxcor = TRUE,
                          estimates.only)
     est[ind1, ] <- out$est
-    gamma[ind1, ] <- out$gamma
+    glm.param[ind1] <- out$glm.param
     if (!estimates.only){
       se[ind1, ] <- out$se
       a[ind1] <- out$a
@@ -149,7 +149,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
                              null.model = TRUE, nworkers, calc.maxcor = FALSE,
                              estimates.only)
         est[ind6, ] <- out$est
-        gamma[ind6, ] <- out$gamma
+        glm.param[ind6] <- out$glm.param
         if (!estimates.only) {
           se[ind6, ] <- out$se
           a[ind6] <- out$a
@@ -166,7 +166,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
       }
       info[[10]] <- Sys.time() - st
       return(list(estimate = est, se = se, a = a, b = b, k = k,
-                  a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info, gamma = gamma))
+                  a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info, glm.param = glm.param))
     }
 
     ind2 <- ind[(n1+1):n2]
@@ -176,7 +176,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
                          pred.cells, null.model, nworkers, calc.maxcor = TRUE,
                          estimates.only)
     est[ind2, ] <- out$est
-    gamma[ind2, ] <- out$gamma
+    glm.param[ind2] <- out$glm.param
     if (!estimates.only) {
       se[ind2, ] <- out$se
       a[ind2] <- out$a
@@ -218,7 +218,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
                              null.model = TRUE, nworkers, calc.maxcor = FALSE,
                              estimates.only)
         est[ind6, ] <- out$est
-        gamma[ind6, ] <- out$gamma
+        glm.param[ind6] <- out$glm.param
         if (!estimates.only) {
           se[ind6, ] <- out$se
           a[ind6] <- out$a
@@ -236,7 +236,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
       }
       info[[10]] <- Sys.time() - st
       return(list(estimate = est, se = se, a = a, b = b, k = k,
-                  a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info, gamma = gamma))
+                  a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info, glm.param = glm.param))
     }
 
     message("Calculating lambda coefficients...")
@@ -245,7 +245,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
                          null.model, nworkers, calc.maxcor = TRUE,
                          estimates.only)
     est[ind3, ] <- out$est
-    gamma[ind3, ] <- out$gamma
+    glm.param[ind3] <- out$glm.param
     if (!estimates.only) {
       se[ind3, ] <- out$se
       a[ind3] <- out$a
@@ -281,7 +281,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
                              null.model = TRUE, nworkers, calc.maxcor = FALSE,
                              estimates.only)
         est[ind6, ] <- out$est
-        gamma[ind6, ] <- out$gamma
+        glm.param[ind6] <- out$glm.param
         if (!estimates.only) {
           se[ind6, ] <- out$se
           a[ind6] <- out$a
@@ -298,7 +298,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
       }
       info[[10]] <- Sys.time() - st
       return(list(estimate = est, se = se, a = a, b = b, k = k,
-                  a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info, gamma = gamma))
+                  a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info, glm.param = glm.param))
     }
 
     pred <- which(info$maxcor > cutoff)
@@ -318,7 +318,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
                          estimates.only)
 
     est[ind4, ] <- out$est
-    gamma[ind4, ] <- out$gamma
+    glm.param[ind4] <- out$glm.param
     if (!estimates.only) {
       se[ind4, ] <- out$se
       a[ind4] <- out$a
@@ -350,7 +350,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
                              pred.cells, null.model = TRUE, nworkers,
                              calc.maxcor = FALSE, estimates.only)
         est[ind6, ] <- out$est
-        gamma[ind6, ] <- out$gamma
+        glm.param[ind6] <- out$glm.param
         if (!estimates.only) {
           se[ind6, ] <- out$se
           a[ind6] <- out$a
@@ -367,7 +367,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
       }
       info[[10]] <- Sys.time() - st
       return(list(estimate = est, se = se, a = a, b = b, k = k,
-                  a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info, gamma = gamma))
+                  a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info, glm.param = glm.param))
     }
 
     n5 <- npred
@@ -380,7 +380,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
                          estimates.only)
 
     est[ind5, ] <- out$est
-    gamma[ind5, ] <- out$gamma
+    glm.param[ind5] <- out$glm.param
     if (!estimates.only) {
       se[ind5, ] <- out$se
       a[ind5] <- out$a
@@ -409,7 +409,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
                            pred.cells, null.model = TRUE, nworkers,
                            calc.maxcor = FALSE, estimates.only)
       est[ind6, ] <- out$est
-      gamma[ind6, ] <- out$gamma
+      glm.param[ind6] <- out$glm.param
       if (!estimates.only) {
         se[ind6, ] <- out$se
         a[ind6] <- out$a
@@ -426,7 +426,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
     }
     info[[10]] <- Sys.time() - st
     return(list(estimate = est, se = se, a = a, b = b, k = k,
-                a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info, gamma = gamma))
+                a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info, glm.param = glm.param))
   } else {
     n1 <- min(max(8, nworkers), npred)
     ind1 <- ind[1:n1]
@@ -437,7 +437,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
                          pred.cells, null.model, nworkers, calc.maxcor = FALSE,
                          estimates.only)
     est[ind1, ] <- out$est
-    gamma[ind1, ] <- out$gamma
+    glm.param[ind1] <- out$glm.param
     if (!estimates.only) {
       se[ind1, ] <- out$se
       a[ind1] <- out$a
@@ -470,7 +470,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
                              null.model = TRUE, nworkers, calc.maxcor = FALSE,
                              estimates.only)
         est[ind6, ] <- out$est
-        gamma[ind6, ] <- out$gamma
+        glm.param[ind6] <- out$glm.param
         if (!estimates.only) {
           se[ind6, ] <- out$se
           a[ind6] <- out$a
@@ -487,7 +487,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
       }
       info[[10]] <- Sys.time() - st
       return(list(estimate = est, se = se, a = a, b = b, k = k,
-                  a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info, gamma = gamma))
+                  a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info, glm.param = glm.param))
     }
 
     n2 <- min(ceiling((npred-n1)/4) + n1, npred)
@@ -498,7 +498,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
                          pred.cells, null.model, nworkers, calc.maxcor = FALSE,
                          estimates.only)
     est[ind2, ] <- out$est
-    gamma[ind2, ] <- out$gamma
+    glm.param[ind2] <- out$glm.param
     if (!estimates.only) {
       se[ind2, ] <- out$se
       a[ind2] <- out$a
@@ -530,7 +530,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
                              null.model = TRUE, nworkers, calc.maxcor = FALSE,
                              estimates.only)
         est[ind6, ] <- out$est
-        gamma[ind6, ] <- out$gamma
+        glm.param[ind6] <- out$glm.param
         if (!estimates.only) {
           se[ind6, ] <- out$se
           a[ind6] <- out$a
@@ -547,7 +547,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
       }
       info[[10]] <- Sys.time() - st
       return(list(estimate = est, se = se, a = a, b = b, k = k,
-                  a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info, gamma = gamma))
+                  a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info, glm.param = glm.param))
     }
 
     n3 <- npred
@@ -559,7 +559,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
                          pred.cells, null.model, nworkers, calc.maxcor = FALSE,
                          estimates.only)
     est[ind3, ] <- out$est
-    gamma[ind3, ] <- out$gamma
+    glm.param[ind3] <- out$glm.param
     if (!estimates.only) {
       se[ind3, ] <- out$se
       a[ind3] <- out$a
@@ -589,7 +589,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
                            null.model = TRUE, nworkers, calc.maxcor = FALSE,
                            estimates.only)
       est[ind6, ] <- out$est
-      gamma[ind6, ] <- out$gamma
+      glm.param[ind6] <- out$glm.param
       if (!estimates.only) {
         se[ind6, ] <- out$se
         a[ind6] <- out$a
@@ -606,7 +606,7 @@ saver.fit <- function(x, x.est, do.fast, ncores, sf, scale.sf, pred.genes,
     }
     info[[10]] <- Sys.time() - st
     return(list(estimate = est, se = se, a = a, b = b, k = k,
-                a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info, gamma = gamma))
+                a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, info = info, glm.param = glm.param))
   }
 }
 

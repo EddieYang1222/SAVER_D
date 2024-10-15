@@ -72,7 +72,9 @@ calc.estimate <- function(x, x.est, cutoff = 0, coefs = NULL, sf, scale.sf,
   ix <- NULL; ind <- NULL
   out <- suppressWarnings(
     foreach::foreach(ix = iterx, ind = itercount,
-                     .packages = "SAVER", .errorhandling="pass") %dopar% {
+                     .packages = c("SAVER"),
+                     .export = c("calc.maxcor", "expr.predict"),
+                     .errorhandling="pass") %dopar% {
       y <- sweep(ix, 2, sf, "/")
       if (calc.maxcor) {
         maxcor <- calc.maxcor(x.est, t(y))
@@ -90,7 +92,7 @@ calc.estimate <- function(x, x.est, cutoff = 0, coefs = NULL, sf, scale.sf,
       }
       
       # GLM parameters
-      gamma <- matrix(0, nrow(ix), ncol(x.est))
+      glm.param.list <- vector("list", nrow(ix))
       
       ct <- rep(0, nrow(ix))
       vt <- rep(0, nrow(ix))
@@ -109,17 +111,23 @@ calc.estimate <- function(x, x.est, cutoff = 0, coefs = NULL, sf, scale.sf,
       for (i in 1:nrow(ix)) {
         j <- (ind - 1)*cs + i
         ptc <- Sys.time()
+        
+        # Initialize parameter names
+        glm.param.names <- NULL
+        
         if (null.model | !pred.gene[i]) {
-          pred.out <- list(mean(y[i, pred.cells]), 0, 0, 0, rep(0, ncol(x.est)))
+          pred.out <- list(mean(y[i, pred.cells]), 0, 0, 0, "(No Model)")
         } else {
           sameind <- which(x.est.names == x.names[i])
           if (is.null(coefs)) {
             if (length(sameind) == 1) {
               pred.out <- expr.predict(x.est[, -sameind], y[i, ],
                                        pred.cells = pred.cells, seed = j)
+              glm.param.names <- c(x.names[i], colnames(x.est)[-sameind])
             } else {
               pred.out <- expr.predict(x.est, y[i, ],
                                        pred.cells = pred.cells, seed = j)
+              glm.param.names <- c(x.names[i], colnames(x.est))
             }
             lambda.max[i] <- pred.out[[2]]
             lambda.min[i] <- pred.out[[3]]
@@ -132,17 +140,27 @@ calc.estimate <- function(x, x.est, cutoff = 0, coefs = NULL, sf, scale.sf,
                                        pred.cells = pred.cells,
                                        lambda.max = lambda.max[i],
                                        lambda.min = lambda.min[i])
+              glm.param.names <- c(x.names[i], colnames(x.est)[-sameind])
             } else {
               pred.out <- expr.predict(x.est, y[i, ],
                                        pred.cells = pred.cells,
                                        lambda.max = lambda.max[i],
                                        lambda.min = lambda.min[i])
+              glm.param.names <- c(x.names[i], colnames(x.est))
             }
           }
         }
+        
         ct[i] <- as.numeric(Sys.time()-ptc)
         sd.cv[i] <- pred.out[[4]]
-        gamma[i, ] <- pred.out[[5]]
+        
+        if (is.null(glm.param.names)) {
+          glm.param.list[[i]] <- pred.out[[5]]
+        } else {
+          named.glm.param <- setNames(pred.out[[5]], glm.param.names)
+          glm.param.list[[i]] <- named.glm.param
+        }
+        
         ptc <- Sys.time()
         post <- calc.post(ix[i, ], pred.out[[1]], sf, scale.sf)
         vt[i] <- as.numeric(Sys.time()-ptc)
@@ -158,7 +176,7 @@ calc.estimate <- function(x, x.est, cutoff = 0, coefs = NULL, sf, scale.sf,
           mu.out[i, ] <- post[[9]]
         }
       }
-      list(est, se, maxcor, lambda.max, lambda.min, sd.cv, ct, vt, a, b, k, a.nll, b.nll, k.nll, mu.out, gamma)
+      list(est, se, maxcor, lambda.max, lambda.min, sd.cv, ct, vt, a, b, k, a.nll, b.nll, k.nll, mu.out, glm.param.list)
     }
   )
   if (length(out[[1]]) != 16) {
@@ -184,11 +202,11 @@ calc.estimate <- function(x, x.est, cutoff = 0, coefs = NULL, sf, scale.sf,
   b.nll <- unlist(lapply(out, `[[`, 13))
   k.nll <- unlist(lapply(out, `[[`, 14))
   
-  gamma <- do.call(rbind, lapply(out, `[[`, 16))
+  glm.param <- do.call(c, lapply(out, `[[`, 16))
   
   list(est = est, se = se, maxcor = maxcor, lambda.max = lambda.max,
        lambda.min = lambda.min, sd.cv = sd.cv, ct = ct, vt = vt, a = a, b = b, k = k,
-       a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, gamma = gamma)
+       a.nll = a.nll, b.nll = b.nll, k.nll = k.nll, mu.out = mu.out, glm.param = glm.param)
 }
 
 #' @rdname calc_estimate
@@ -203,7 +221,7 @@ calc.estimate.mean <- function(pred.x, fit.x, sf, scale.sf, pred.mu, nworkers, e
   ix <- NULL; ind <- NULL; imu <- NULL
   out <- suppressWarnings(
     foreach::foreach(ix = iterx, imu = itermu, ind = itercount,
-                     .packages = "SAVER", .errorhandling="pass") %dopar% {
+                     .packages = c("SAVER"), .errorhandling="pass") %dopar% {
       
       y <- sweep(ix, 2, sf, "/")
       maxcor <- rep(0, nrow(y))
@@ -286,7 +304,7 @@ calc.estimate.null <- function(x, sf, scale.sf, nworkers, estimates.only) {
   itercount <- iterators::icount(ceiling(iterx$length/iterx$chunksize))
   ix <- NULL; ind <- NULL
   out <- suppressWarnings(
-    foreach::foreach(ix = iterx, ind = itercount, .packages = "SAVER",
+    foreach::foreach(ix = iterx, ind = itercount, .packages = c("SAVER"),
                      .errorhandling="pass") %dopar% {
       y <- sweep(ix, 2, sf, "/")
       maxcor <- rep(0, nrow(y))

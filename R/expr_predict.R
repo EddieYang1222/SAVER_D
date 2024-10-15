@@ -35,7 +35,7 @@ expr.predict <- function(x, y, pred.cells = 1:length(y), seed = NULL,
   if (!is.null(seed))
     set.seed(seed)
   if (sd(y) == 0)
-    return(list(rep(mean(y[pred.cells]), length(y)), 0, 0, 0, rep(NA, ncol(x))))
+    return(list(rep(mean(y[pred.cells]), length(y)), 0, 0, 0, rep(NA, ncol(x) + 1)))
   
   if (is.null(lambda.max)) {
     cv <- tryCatch(
@@ -51,7 +51,7 @@ expr.predict <- function(x, y, pred.cells = 1:length(y), seed = NULL,
       lambda.max <- 0
       lambda.min <- 0
       sd.cv <- 0
-      gamma <- rep(NA, ncol(x))
+      glm.param <- rep(NA, ncol(x) + 1)
     } else {
       mu <- c(predict(cv, newx = x, s = "lambda.min",
                                         type="response"))
@@ -59,7 +59,7 @@ expr.predict <- function(x, y, pred.cells = 1:length(y), seed = NULL,
       lambda.min <- cv$lambda.min
       min.ind <- which(cv$lambda == cv$lambda.min)
       sd.cv <- (cv$cvm[1] - cv$cvm[min.ind]) / cv$cvsd[min.ind]
-      gamma <- as.vector(coef(cv, s = "lambda.min"))[-1]
+      glm.param <- as.vector(coef(cv, s = "lambda.min"))
     }
   } else {
     lambda.seq <- c(exp(seq(log(lambda.max), log(lambda.min), by = -0.2)),
@@ -77,14 +77,14 @@ expr.predict <- function(x, y, pred.cells = 1:length(y), seed = NULL,
       lambda.max <- 0
       lambda.min <- 0
       sd.cv <- 0
-      gamma <- rep(NA, ncol(x))
+      glm.param <- rep(NA, ncol(x) + 1)
     } else {
       mu <- exp(c(glmnet::predict.glmnet(cv, newx = x, s = lambda.min,
                                      type="response")))
-      sd.cv <- 0
-      gamma <- as.vector(coef(cv, s = "lambda.min"))[-1]
+      sd.cv <- NA
+      glm.param <- as.vector(coef(cv, s = "lambda.min"))
     }
   }
-  return(list(mu, lambda.max, lambda.min, sd.cv, gamma))
+  return(list(mu, lambda.max, lambda.min, sd.cv, glm.param))
 }
 
