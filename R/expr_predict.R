@@ -82,7 +82,7 @@ expr.predict <- function(x, y, pred.cells = 1:length(y), seed = NULL,
       mu <- exp(c(glmnet::predict.glmnet(cv, newx = x, s = lambda.min,
                                      type="response")))
       sd.cv <- NA
-      glm.param <- as.vector(coef(cv, s = "lambda.min"))
+      glm.param <- as.vector(coef(cv, s = lambda.min))
     }
   }
   return(list(mu, lambda.max, lambda.min, sd.cv, glm.param))

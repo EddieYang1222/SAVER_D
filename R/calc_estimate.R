@@ -73,7 +73,7 @@ calc.estimate <- function(x, x.est, cutoff = 0, coefs = NULL, sf, scale.sf,
   out <- suppressWarnings(
     foreach::foreach(ix = iterx, ind = itercount,
                      .packages = c("SAVER"),
-                     .export = c("calc.maxcor", "expr.predict"),
+                     .export = c("calc.maxcor", "expr.predict", "est.lambda"),
                      .errorhandling="pass") %dopar% {
       y <- sweep(ix, 2, sf, "/")
       if (calc.maxcor) {
