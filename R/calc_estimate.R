@@ -212,61 +212,59 @@ calc.estimate <- function(x, x.est, cutoff = 0, coefs = NULL, sf, scale.sf,
 #' @rdname calc_estimate
 #' @import foreach
 #' @export
-calc.estimate.mean <- function(pred.x, fit.x, sf, scale.sf, pred.mu, nworkers, estimates.only) {
-  
-  cs <- min(ceiling(nrow(pred.x)/nworkers), get.chunk(nrow(pred.x), nworkers))
-  iterx <- iterators::iter(as.matrix(pred.x), by = "row", chunksize = cs)
-  itermu <- iterators::iter(pred.mu, by = "row", chunksize = cs)
+calc.estimate.mean <- function(x, sf, scale.sf, mu, nworkers, estimates.only) {
+  cs <- min(ceiling(nrow(x)/nworkers), get.chunk(nrow(x), nworkers))
+  iterx <- iterators::iter(as.matrix(x), by = "row", chunksize = cs)
+  itermu <- iterators::iter(mu, by = "row", chunksize = cs)
   itercount <- iterators::icount(ceiling(iterx$length/iterx$chunksize))
   ix <- NULL; ind <- NULL; imu <- NULL
   out <- suppressWarnings(
     foreach::foreach(ix = iterx, imu = itermu, ind = itercount,
-                     .packages = c("SAVER"), .errorhandling="pass") %dopar% {
-      
-      y <- sweep(ix, 2, sf, "/")
-      maxcor <- rep(0, nrow(y))
-      gene.means <- rowMeans(y)
-      mu.means <- rowMeans(imu)
-      imu[mu.means == 0, ] <- gene.means[mu.means == 0]
-      pred <- sweep(imu, 1, rowMeans(y)/rowMeans(imu), "*")
-      est <- matrix(0, nrow(ix), ncol(ix))
-      if (!estimates.only) {
-        se <- matrix(0, nrow(ix), ncol(ix))
-      } else {
-        se <- NA
-      }
-      ct <- rep(0, nrow(ix))
-      vt <- rep(0, nrow(ix))
-      lambda.max <- rep(0, nrow(ix))
-      lambda.min <- rep(0, nrow(ix))
-      sd.cv <- rep(0, nrow(ix))
-      
-      a <- rep(0, nrow(ix))
-      b <- rep(0, nrow(ix))
-      k <- rep(0, nrow(ix))
-      a.nll <- rep(0, nrow(ix))
-      b.nll <- rep(0, nrow(ix))
-      k.nll <- rep(0, nrow(ix))
-      mu.out <- matrix(0, nrow(ix), ncol(ix))
-      
-      for (i in 1:nrow(ix)) {
-        ptc <- Sys.time()
-        post <- calc.post(ix[i, ], pred[i, ], sf, scale.sf)
-        vt[i] <- as.numeric(Sys.time()-ptc)
-        est[i, ] <- post[[1]]
-        if (!estimates.only) {
-          se[i, ] <- post[[2]]
-          a[i] <- post[[3]]
-          b[i] <- post[[4]]
-          k[i] <- post[[5]]
-          a.nll[i] <- post[[6]]
-          b.nll[i] <- post[[7]]
-          k.nll[i] <- post[[8]]
-          mu.out[i, ] <- post[[9]]
-        }
-      }
-      list(est, se, maxcor, lambda.max, lambda.min, sd.cv, ct, vt, a, b, k, a.nll, b.nll, k.nll, mu.out)
-    }
+                     .packages = "SAVER", .errorhandling="pass") %dopar% {
+                       y <- sweep(ix, 2, sf, "/")
+                       maxcor <- rep(0, nrow(y))
+                       gene.means <- rowMeans(y)
+                       mu.means <- rowMeans(imu)
+                       imu[mu.means == 0, ] <- gene.means[mu.means == 0]
+                       pred <- sweep(imu, 1, rowMeans(y)/rowMeans(imu), "*")
+                       est <- matrix(0, nrow(ix), ncol(ix))
+                       if (!estimates.only) {
+                         se <- matrix(0, nrow(ix), ncol(ix))
+                       } else {
+                         se <- NA
+                       }
+                       ct <- rep(0, nrow(ix))
+                       vt <- rep(0, nrow(ix))
+                       lambda.max <- rep(0, nrow(ix))
+                       lambda.min <- rep(0, nrow(ix))
+                       sd.cv <- rep(0, nrow(ix))
+                       
+                       a <- rep(0, nrow(ix))
+                       b <- rep(0, nrow(ix))
+                       k <- rep(0, nrow(ix))
+                       a.nll <- rep(0, nrow(ix))
+                       b.nll <- rep(0, nrow(ix))
+                       k.nll <- rep(0, nrow(ix))
+                       mu.out <- matrix(0, nrow(ix), ncol(ix))
+                       
+                       for (i in 1:nrow(ix)) {
+                         ptc <- Sys.time()
+                         post <- calc.post(ix[i, ], pred[i, ], sf, scale.sf)
+                         vt[i] <- as.numeric(Sys.time()-ptc)
+                         est[i, ] <- post[[1]]
+                         if (!estimates.only) {
+                           se[i, ] <- post[[2]]
+                           a[i] <- post[[3]]
+                           b[i] <- post[[4]]
+                           k[i] <- post[[5]]
+                           a.nll[i] <- post[[6]]
+                           b.nll[i] <- post[[7]]
+                           k.nll[i] <- post[[8]]
+                           mu.out[i, ] <- post[[9]]
+                         }
+                       }
+                       list(est, se, maxcor, lambda.max, lambda.min, sd.cv, ct, vt, a, b, k, a.nll, b.nll, k.nll, mu.out)
+                     }
   )
   if (length(out[[1]]) != 15) {
     stop(out[[1]])
